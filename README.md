@@ -1,13 +1,13 @@
 POC - Déployer en 5 min un blog Ghost 3 chez Scaleway !
 
-Article = [https://pg3.io/blog/5min-ghost-scaleway/](https://pg3.io/blog/5min-ghost-scaleway/)
+*Article - [https://pg3.io/blog/5min-ghost-scaleway/](https://pg3.io/blog/5min-ghost-scaleway/)*
 
-#Prérequis
+# Prérequis
 * Terraform - [install](https://learn.hashicorp.com/terraform/getting-started/install.html)
 * Ansible version 2.8 - [install](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html)
 * Compte Scaleway et un API Token - [documentation (en)](https://www.scaleway.com/en/docs/generate-an-api-token/)
 
-#Terraform
+# Terraform
 Update variables
 * IP_ADMIN
 ```
@@ -15,7 +15,7 @@ terraform init
 terraform apply
 ```
 
-#Ansible
+# Ansible
 Update variables
 * SCALEWAY_IP_PUBLIC
 * LETSENCRYPT_EMAIL
