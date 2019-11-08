@@ -1,0 +1,86 @@
+version: "3.7"
+
+services:
+  proxy:
+    image: "traefik:v2.0.2"
+    command:
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      - "--providers.docker.swarmMode=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-public"
+      - "--entrypoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--api.insecure"
+      - "--certificatesresolvers.le.acme.tlschallenge=true"
+      - "--certificatesresolvers.le.acme.email=LETSENCRYPT_EMAIL"
+      - "--certificatesresolvers.le.acme.storage=/le/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "cert:/le"
+    networks:
+      - traefik-public
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.admin.rule=Host(`traefik.SCALEWAY_IP_PUBLIC.xip.io`)"
+        - "traefik.http.routers.admin.entrypoints=websecure"
+        - "traefik.http.routers.admin.tls.certresolver=le"
+        - "traefik.http.services.admin.loadbalancer.server.port=8080"
+        - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+        - "traefik.http.routers.http-catchall.entrypoints=web"
+        - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+        - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+  blog:
+    image: ghost:latest
+    environment:
+
+    
+      url: https://blog.SCALEWAY_IP_PUBLIC.xip.io
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: user
+      database__connection__password: example
+      database__connection__database: ghost
+    volumes:
+      - ghost:/var/lib/ghost/content
+    depends_on:
+      - proxy
+      - db
+    networks:
+      - traefik-public
+      - back
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.docker.network=traefik-public"
+        - "traefik.http.routers.blog.rule=Host(`blog.SCALEWAY_IP_PUBLIC.xip.io`)"
+        - "traefik.http.routers.blog.entrypoints=websecure"
+        - "traefik.http.services.blog.loadbalancer.server.port=2368"   
+        - "traefik.http.routers.blog.tls.certresolver=le"
+
+  db:
+    image: mysql:5
+    environment:
+      MYSQL_DATABASE: ghost
+      MYSQL_USER: user
+      MYSQL_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: example
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - back
+
+volumes:
+  cert:
+  ghost:
+  db:
+
+networks:
+  back:
+  traefik-public:
+    external: true

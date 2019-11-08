@@ -1,0 +1,33 @@
+- hosts: all
+  gather_facts: False
+
+  tasks:
+  - name: install packages base 
+    apt: name={{ packages }} state=present update_cache=yes state=latest
+    vars:
+      packages:
+      - python-pip
+
+  - name: install packages pip
+    pip: name={{ packages }} state=present
+    vars:
+      packages:
+        - docker
+        - pyyaml
+        - jsondiff
+
+  - name: Init a new swarm with default parameters
+    docker_swarm: state=present
+  
+  - name: Create a network
+    docker_network: name=traefik-public driver=overlay
+
+  - name: Copy docker compose
+    copy: src=docker-compose.yml dest=/opt/docker-compose.yml
+  
+  - name: Deploy stack from a compose file
+    docker_stack:
+      state: present
+      name: web
+      compose:
+        - /opt/docker-compose.yml
